@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Farm Vision - Tarımsal AI Çözümleri{% endblock %}</title>
+    
+    <!-- Security Headers -->
+    <meta name="csrf-token" content="{{ csrf_token() if csrf_token else '' }}">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://code.jquery.com https://unpkg.com; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com; img-src 'self' data: https:; font-src 'self' https://cdnjs.cloudflare.com;">
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <meta http-equiv="X-Frame-Options" content="SAMEORIGIN">
+    <meta http-equiv="X-XSS-Protection" content="1; mode=block">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+    <link rel="shortcut icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='favicon.svg') }}">
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-success fixed-top">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('main.index') }}">
+                <i class="fas fa-seedling me-2"></i>Farm Vision
+            </a>
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    {% if current_user.is_authenticated %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('main.dashboard') }}">
+                            <i class="fas fa-tachometer-alt me-1"></i>Dashboard
+                        </a>
+                    </li>
+                    
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-search me-1"></i>AI Tespit
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{{ url_for('detection.fruit_detection') }}">
+                                <i class="fas fa-apple-alt me-2"></i>Meyve Tespiti
+                            </a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('detection.leaf_detection') }}">
+                                <i class="fas fa-leaf me-2"></i>Yaprak Hastalık Tespiti
+                            </a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('detection.tree_detection') }}">
+                                <i class="fas fa-tree me-2"></i>Ağaç Tespiti
+                            </a></li>
+                        </ul>
+                    </li>
+                    
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-map me-1"></i>Haritalama
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{{ url_for('mapping.vegetation_analysis') }}">
+                                <i class="fas fa-chart-area me-2"></i>Bitki Örtüsü Analizi
+                            </a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('mapping.interactive_map') }}">
+                                <i class="fas fa-globe me-2"></i>İnteraktif Harita
+                            </a></li>
+                        </ul>
+                    </li>
+                    
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('main.projects') }}">
+                            <i class="fas fa-folder me-1"></i>Projeler
+                        </a>
+                    </li>
+                    
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('main.ai_status') }}">
+                            <i class="fas fa-brain me-1"></i>AI Sistem
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+                
+                <ul class="navbar-nav">
+                    {% if current_user.is_authenticated %}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-user me-1"></i>{{ current_user.first_name or current_user.username }}
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{{ url_for('auth.profile') }}">
+                                <i class="fas fa-user-edit me-2"></i>Profil
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}">
+                                <i class="fas fa-sign-out-alt me-2"></i>Çıkış
+                            </a></li>
+                        </ul>
+                    </li>
+                    {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('auth.login') }}">
+                            <i class="fas fa-sign-in-alt me-1"></i>Giriş
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('auth.register') }}">
+                            <i class="fas fa-user-plus me-1"></i>Kayıt
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Flash Messages -->
+    <div class="container mt-5 pt-3">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <!-- Main Content -->
+    <main class="container mt-4 pt-4">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-light mt-5 py-4">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5><i class="fas fa-seedling me-2"></i>Farm Vision</h5>
+                    <p class="mb-0">Türk tarımında AI destekli çözümler</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <p class="mb-0">&copy; 2025 Farm Vision. Tüm hakları saklıdır.</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    
+    <!-- Custom JS -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    
+    <!-- Enhanced Security and Validation JavaScript -->
+    <script>
+    // Enhanced file upload validation
+    function validateFile(file, maxSize = 50, allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/tiff', 'image/tif']) {
+        const fileSizeMB = file.size / 1024 / 1024;
+        if (fileSizeMB > maxSize) {
+            alert(`Dosya boyutu ${maxSize}MB'dan küçük olmalıdır. (Mevcut: ${fileSizeMB.toFixed(2)}MB)`);
+            return false;
+        }
+        
+        if (!allowedTypes.includes(file.type)) {
+            alert(`Desteklenmeyen dosya türü: ${file.type}`);
+            return false;
+        }
+        
+        const fileName = file.name;
+        if (fileName.length > 255) {
+            alert('Dosya adı çok uzun.');
+            return false;
+        }
+        
+        const suspiciousPatterns = ['.php', '.exe', '.bat', '.cmd', '.scr', '.js', '.html'];
+        if (suspiciousPatterns.some(pattern => fileName.toLowerCase().includes(pattern))) {
+            alert('Güvenlik nedeniyle bu dosya türü kabul edilmiyor.');
+            return false;
+        }
+        
+        return true;
+    }
+
+    // Enhanced form validation
+    function validateForm(formElement) {
+        const requiredFields = formElement.querySelectorAll('[required]');
+        let isValid = true;
+        
+        requiredFields.forEach(field => {
+            if (!field.value.trim()) {
+                field.classList.add('is-invalid');
+                isValid = false;
+            } else {
+                field.classList.remove('is-invalid');
+            }
+        });
+        
+        const emailFields = formElement.querySelectorAll('input[type="email"]');
+        emailFields.forEach(field => {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (field.value && !emailRegex.test(field.value)) {
+                field.classList.add('is-invalid');
+                isValid = false;
+            }
+        });
+        
+        const password = formElement.querySelector('input[name="password"]');
+        const confirmPassword = formElement.querySelector('input[name="confirm_password"]');
+        if (password && confirmPassword && password.value !== confirmPassword.value) {
+            confirmPassword.classList.add('is-invalid');
+            isValid = false;
+        }
+        
+        return isValid;
+    }
+
+    // Safe AJAX call wrapper
+    function safeAjaxCall(url, data, successCallback, errorCallback) {
+        try {
+            const csrfToken = document.querySelector('meta[name=csrf-token]');
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken ? csrfToken.getAttribute('content') : ''
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (successCallback) successCallback(data);
+            })
+            .catch(error => {
+                console.error('AJAX Error:', error);
+                if (errorCallback) {
+                    errorCallback(error);
+                } else {
+                    alert('Bir hata oluştu. Lütfen tekrar deneyin.');
+                }
+            });
+        } catch (error) {
+            console.error('Request setup error:', error);
+            alert('İstek gönderilemedi. Sayfa yenilenerek tekrar deneyin.');
+        }
+    }
+
+    // Initialize security enhancements
+    document.addEventListener('DOMContentLoaded', function() {
+        // Apply file validation to all file inputs
+        document.querySelectorAll('input[type="file"]').forEach(input => {
+            input.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file && !validateFile(file)) {
+                    this.value = '';
+                }
+            });
+        });
+
+        // Apply form validation to all forms
+        document.querySelectorAll('form').forEach(form => {
+            form.addEventListener('submit', function(e) {
+                if (!validateForm(this)) {
+                    e.preventDefault();
+                    alert('Lütfen tüm gerekli alanları doğru şekilde doldurun.');
+                }
+            });
+        });
+    });
+    </script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

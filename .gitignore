@@ -1,0 +1,8 @@
+farm_vision_py311/  
+build/  
+*.egg-info/  
+__pycache__/  
+instance/  
+logs/  
+.env  
+uv.lock  
